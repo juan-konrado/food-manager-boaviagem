@@ -1,0 +1,116 @@
+// ARQUIVO: prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- ENUMS (Opções fixas) ---
+
+enum Role {
+  ADMIN
+  WAITER   // Garçom
+  KITCHEN  // Cozinha
+  CASHIER  // Caixa
+}
+
+enum OrderStatus {
+  DRAFT       // Rascunho (ainda pedindo)
+  WAITING     // Aguardando confirmação/envio para cozinha
+  PREPARING   // Em preparo (KDS)
+  READY       // Pronto para entrega
+  DELIVERED   // Entregue na mesa
+  COMPLETED   // Pago/Fechado
+  CANCELED    // Cancelado
+}
+
+// --- MODELOS (Tabelas) ---
+
+// RF16 - Controle de Acesso
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(WAITER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// RF09 - Cardápio (Categorias)
+model Category {
+  id        String    @id @default(uuid())
+  name      String
+  products  Product[] // Relacionamento: Uma categoria tem vários produtos
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// RF09 e RF10 - Produtos e Estoque
+model Product {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  price       Float
+  imageUrl    String?     // Opcional
+  stock       Int         @default(0) // RF10 - Controle simples de estoque
+  isAvailable Boolean     @default(true) // Se acabou, desativa
+  
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  
+  orderItems  OrderItem[] // Relacionamento com os pedidos
+
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+// RF01 - Mesas
+model Table {
+  id        String   @id @default(uuid())
+  number    Int      @unique // Número da mesa (Ex: Mesa 10)
+  orders    Order[]  // Histórico de pedidos desta mesa
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// RF01, RF02, RF03 - O Pedido (A "Comanda")
+model Order {
+  id        String      @id @default(uuid())
+  
+  tableId   String?
+  table     Table?      @relation(fields: [tableId], references: [id])
+  
+  status    OrderStatus @default(DRAFT)
+  total     Float       @default(0.0) // RF03 - Subtotal atualizado
+  
+  items     OrderItem[] // Lista de itens pedidos (Cerveja, Batata, etc)
+  
+  openedAt  DateTime    @default(now()) // Horário de abertura
+  closedAt  DateTime?   // Horário de fechamento (pago)
+
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+// RF02, RF05 - Itens dentro do Pedido
+model OrderItem {
+  id        String   @id @default(uuid())
+  
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  
+  quantity  Int
+  price     Float    // Preço no momento do pedido (para histórico não mudar se o preço subir depois)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
