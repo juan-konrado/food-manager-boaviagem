@@ -10,6 +10,8 @@ import { AddItemController } from './controllers/order/AddItemController';
 import { DetailOrderController } from './controllers/order/DetailOrderController';
 import { RemoveItemController } from './controllers/order/RemoveItemController';
 import { SendOrderController } from './controllers/order/SendOrderController';
+import { RemoveOrderController } from './controllers/order/RemoveOrderController';
+import { ListCategoryController } from './controllers/category/ListCategoryController';
 
 const router = Router();
 const userController = new UserController();
@@ -24,6 +26,8 @@ router.get('/me', isAuthenticated, new UserController().detail);
 // -- ROTAS CATEGORIA --
 // Perceba o 'isAuthenticated': Só logado cria categoria!
 router.post('/category', isAuthenticated, new CreateCategoryController().handle);
+
+router.get('/category', isAuthenticated, new ListCategoryController().handle);
 
 // -- ROTAS PRODUTOS --
 router.post('/product', isAuthenticated, new CreateProductController().handle);
@@ -42,6 +46,9 @@ router.get('/order/detail', isAuthenticated, new DetailOrderController().handle)
 
 // -- REMOVER ITEM --
 router.delete('/order/remove', isAuthenticated, new RemoveItemController().handle);
+
+// Rota para deletar a mesa inteira
+router.delete('/order', isAuthenticated, new RemoveOrderController().handle);
 
 // -- ENVIAR PEDIDO (MUDAR STATUS) --
 router.put('/order/send', isAuthenticated, new SendOrderController().handle);
