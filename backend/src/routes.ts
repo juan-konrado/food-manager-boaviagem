@@ -12,6 +12,7 @@ import { RemoveItemController } from './controllers/order/RemoveItemController';
 import { SendOrderController } from './controllers/order/SendOrderController';
 import { RemoveOrderController } from './controllers/order/RemoveOrderController';
 import { ListCategoryController } from './controllers/category/ListCategoryController';
+import { ListOrdersController } from './controllers/order/ListOrdersController';
 
 const router = Router();
 const userController = new UserController();
@@ -38,6 +39,8 @@ router.get('/category/product', isAuthenticated, new ListByCategoryController().
 // -- ROTAS ORDER (PEDIDOS) --
 router.post('/order', isAuthenticated, new CreateOrderController().handle);
 
+router.get('/orders', isAuthenticated, new ListOrdersController().handle);
+
 // -- ADICIONAR ITEM NA COMANDA --
 router.post('/order/add', isAuthenticated, new AddItemController().handle);
 
@@ -52,5 +55,7 @@ router.delete('/order', isAuthenticated, new RemoveOrderController().handle);
 
 // -- ENVIAR PEDIDO (MUDAR STATUS) --
 router.put('/order/send', isAuthenticated, new SendOrderController().handle);
+
+
 
 export { router };
