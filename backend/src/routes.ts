@@ -1,3 +1,5 @@
+import multer from 'multer';
+import uploadConfig from './config/multer';
 import { Router } from 'express';
 import { UserController } from './controllers/UserController';
 import { AuthController } from './controllers/AuthController'; // <--- Importe aqui
@@ -13,10 +15,15 @@ import { SendOrderController } from './controllers/order/SendOrderController';
 import { RemoveOrderController } from './controllers/order/RemoveOrderController';
 import { ListCategoryController } from './controllers/category/ListCategoryController';
 import { ListOrdersController } from './controllers/order/ListOrdersController';
+import { FinishOrderController } from './controllers/order/FinishOrderController';
+import { UpdateProductController } from './controllers/product/UpdateProductController';
+import { DeleteProductController } from './controllers/product/DeleteProductController';
+import { DeleteCategoryController } from './controllers/category/DeleteCategoryController';
 
 const router = Router();
 const userController = new UserController();
 const authController = new AuthController(); // <--- Instancie aqui
+const upload = multer(uploadConfig.upload("./tmp"));
 
 
 // -- ROTAS USUÁRIO --
@@ -31,10 +38,16 @@ router.post('/category', isAuthenticated, new CreateCategoryController().handle)
 router.get('/category', isAuthenticated, new ListCategoryController().handle);
 
 // -- ROTAS PRODUTOS --
-router.post('/product', isAuthenticated, new CreateProductController().handle);
+router.post('/product', isAuthenticated, upload.single('file'), new CreateProductController().handle);
+
+router.put('/product', isAuthenticated, upload.single('file'), new UpdateProductController().handle);
 
 // GET /category/product?category_id=123
 router.get('/category/product', isAuthenticated, new ListByCategoryController().handle);
+
+// Rotas de Deletar
+router.delete('/category', isAuthenticated, new DeleteCategoryController().handle);
+router.delete('/product', isAuthenticated, new DeleteProductController().handle);
 
 // -- ROTAS ORDER (PEDIDOS) --
 router.post('/order', isAuthenticated, new CreateOrderController().handle);
@@ -56,6 +69,7 @@ router.delete('/order', isAuthenticated, new RemoveOrderController().handle);
 // -- ENVIAR PEDIDO (MUDAR STATUS) --
 router.put('/order/send', isAuthenticated, new SendOrderController().handle);
 
+router.put('/order/finish', isAuthenticated, new FinishOrderController().handle);
 
 
 export { router };

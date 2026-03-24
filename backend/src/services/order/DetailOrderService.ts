@@ -7,23 +7,19 @@ interface DetailRequest {
 }
 
 class DetailOrderService {
-  async execute({ order_id }: DetailRequest){
-
-    const orders = await prisma.order.findFirst({
+  async execute({ order_id }: DetailRequest) {
+    // Busca todos os itens que pertencem a esta comanda específica
+    const items = await prisma.orderItem.findMany({
       where: {
-        id: order_id
+        orderId: order_id // Aqui usamos o orderId que está no seu Prisma!
       },
-      // A MÁGICA ACONTECE AQUI:
       include: {
-        items: {
-          include: {
-            product: true // Dentro de cada item, traga os detalhes do produto (nome, foto)
-          }
-        }
+        product: true, // Traz os dados do produto (como o nome) junto!
+        order: true
       }
-    })
+    });
 
-    return orders;
+    return items;
   }
 }
 

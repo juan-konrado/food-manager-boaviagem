@@ -88,6 +88,7 @@ model Order {
   name   String?
   status    OrderStatus @default(DRAFT)
   total     Float       @default(0.0) // RF03 - Subtotal atualizado
+  paymentMethod String?
   
   items     OrderItem[] // Lista de itens pedidos (Cerveja, Batata, etc)
   
@@ -109,6 +110,7 @@ model OrderItem {
   product   Product  @relation(fields: [productId], references: [id])
   
   quantity  Int
+  observation String?
   price     Float    // Preço no momento do pedido (para histórico não mudar se o preço subir depois)
   
   createdAt DateTime @default(now())

@@ -4,16 +4,18 @@ const prisma = new PrismaClient();
 
 class ListOrdersService {
     async execute() {
-        // Busca todos os pedidos que ainda não foram finalizados
+        // Busca todos os pedidos, EXCETO os que já foram pagos (COMPLETED) ou cancelados
         const orders = await prisma.order.findMany({
             where: {
-                status: 'DRAFT' // Traz só as mesas que o seu pai ainda está atendendo
+                status: {
+                    notIn: ['COMPLETED', 'CANCELED'] // A mágica está aqui!
+                }
             },
             include: {
-                table: true // Puxa junto os dados da mesa (como o número dela)
+                table: true
             },
             orderBy: {
-                createdAt: 'desc' // Traz os mais recentes primeiro
+                createdAt: 'desc'
             }
         });
 
