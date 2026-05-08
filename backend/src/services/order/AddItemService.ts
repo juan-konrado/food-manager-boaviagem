@@ -5,12 +5,12 @@ const prisma = new PrismaClient();
 interface ItemRequest {
   order_id: string;
   product_id: string;
-  amount: number;       // A quantidade (1x, 2x, etc.)
+  quantity: number;       // A quantidade (1x, 2x, etc.)
   observation?: string; // A nossa nova observação ("sem ervilha")
 }
 
 class AddItemService {
-  async execute({ order_id, product_id, amount, observation }: ItemRequest) {
+  async execute({ order_id, product_id, quantity, observation }: ItemRequest) {
 
     // Primeiro, vamos buscar o preço atual do produto à base de dados
     const product = await prisma.product.findUnique({
@@ -26,7 +26,7 @@ class AddItemService {
       data: {
         orderId: order_id,
         productId: product_id,
-        quantity: amount,
+        quantity: quantity,
         observation: observation,
         price: product.price // Guarda o preço que o produto tem hoje
       }

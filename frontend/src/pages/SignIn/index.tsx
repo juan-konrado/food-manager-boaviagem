@@ -28,7 +28,7 @@ export default function SignIn() {
             });
 
             // Se deu certo, o GPS joga o usuário para a tela de Produtos!
-            navigate('/product');
+            navigate('/home');
 
         } catch (err) {
             console.log(err);

@@ -4,19 +4,26 @@ const prisma = new PrismaClient();
 
 interface OrderRequest {
     order_id: string;
-    payment_method: string; // <-- Agora ele pede o pagamento!
+    paymentMethod: string;
+    user_id: string;
 }
 
 class FinishOrderService {
-    async execute({ order_id, payment_method }: OrderRequest) {
+    async execute({ order_id, paymentMethod, user_id }: OrderRequest) {
+
+        // Busca o nome do garçom no banco de dados usando o ID
+        const user = await prisma.user.findUnique({
+            where: { id: user_id }
+        });
+
+        // Atualiza a comanda
         const order = await prisma.order.update({
-            where: {
-                id: order_id
-            },
+            where: { id: order_id },
             data: {
                 status: 'COMPLETED',
                 closedAt: new Date(),
-                paymentMethod: payment_method // <-- Salva no banco!
+                paymentMethod: paymentMethod,
+                waiter_name: user?.name // 🟢 A CORREÇÃO ESTÁ AQUI (O sinal de ":" é obrigatório!)
             }
         });
 
@@ -24,4 +31,4 @@ class FinishOrderService {
     }
 }
 
-export { FinishOrderService }
+export { FinishOrderService };

@@ -13,6 +13,7 @@ export default function Product() {
 
     const [name, setName] = useState('');
     const [price, setPrice] = useState('');
+    const [costPrice, setCostPrice] = useState('');
     const [description, setDescription] = useState('');
 
     // Memórias para a Foto do Produto
@@ -52,19 +53,24 @@ export default function Product() {
     async function handleRegister(event: FormEvent) {
         event.preventDefault();
 
-        if (name === '' || price === '' || description === '' || !imageAvatar) {
-            alert('Preencha todos os campos e selecione uma foto!');
+        // 1. Tiramos o "!imageAvatar" daqui para não barrar o cadastro
+        if (name === '' || price === '') {
+            alert('Preencha pelo menos o nome e o preço!');
             return;
         }
 
         try {
-            // Quando enviamos arquivos (fotos), precisamos usar o FormData em vez do JSON comum
             const data = new FormData();
             data.append('name', name);
-            data.append('price', price.replace(',', '.')); // Garante que o banco aceite casas decimais
+            data.append('price', price.replace(',', '.'));
+            data.append('cost_price', costPrice);
             data.append('description', description);
             data.append('category_id', categorySelected);
-            data.append('file', imageAvatar);
+
+            // 2. Só anexa o arquivo se ele realmente existir!
+            if (imageAvatar) {
+                data.append('file', imageAvatar);
+            }
 
             await api.post('/product', data);
 
@@ -83,7 +89,7 @@ export default function Product() {
         }
     }
 
-    
+
 
     return (
         <>
@@ -126,6 +132,15 @@ export default function Product() {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                         />
+
+                        <input
+                            type="text"
+                            placeholder="Preço de Custo (Ex: 5.00)"
+                            style={styles.input}
+                            value={costPrice}
+                            onChange={(e) => setCostPrice(e.target.value)}
+                        />
+
                         <input
                             type="text"
                             placeholder="Preço (Ex: 15,90)"

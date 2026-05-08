@@ -1,5 +1,3 @@
-// ARQUIVO: prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,110 +7,90 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- ENUMS (Opções fixas) ---
-
 enum Role {
   ADMIN
-  WAITER   // Garçom
-  KITCHEN  // Cozinha
-  CASHIER  // Caixa
+  WAITER
+  KITCHEN
+  CASHIER
 }
 
 enum OrderStatus {
-  DRAFT       // Rascunho (ainda pedindo)
-  WAITING     // Aguardando confirmação/envio para cozinha
-  PREPARING   // Em preparo (KDS)
-  READY       // Pronto para entrega
-  DELIVERED   // Entregue na mesa
-  COMPLETED   // Pago/Fechado
-  CANCELED    // Cancelado
+  DRAFT
+  WAITING
+  PREPARING
+  READY
+  DELIVERED
+  COMPLETED
+  CANCELED
 }
 
-// --- MODELOS (Tabelas) ---
-
-// RF16 - Controle de Acesso
 model User {
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
   password  String
-  role      Role     @default(WAITER)
+  role      String   @default("GARCOM")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// RF09 - Cardápio (Categorias)
 model Category {
   id        String    @id @default(uuid())
   name      String
-  products  Product[] // Relacionamento: Uma categoria tem vários produtos
+  products  Product[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }
 
-// RF09 e RF10 - Produtos e Estoque
 model Product {
   id          String      @id @default(uuid())
   name        String
   description String?
   price       Float
-  imageUrl    String?     // Opcional
-  stock       Int         @default(0) // RF10 - Controle simples de estoque
-  isAvailable Boolean     @default(true) // Se acabou, desativa
-  
+  cost_price  Float?      @default(0.0)
+  imageUrl    String?
+  stock       Int         @default(0)
+  isAvailable Boolean     @default(true)
   categoryId  String
   category    Category    @relation(fields: [categoryId], references: [id])
-  
-  orderItems  OrderItem[] // Relacionamento com os pedidos
-
+  orderItems  OrderItem[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
 
-// RF01 - Mesas
 model Table {
   id        String   @id @default(uuid())
-  number    Int      @unique // Número da mesa (Ex: Mesa 10)
-  orders    Order[]  // Histórico de pedidos desta mesa
-  
+  number    Int      @unique
+  orders    Order[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
-// RF01, RF02, RF03 - O Pedido (A "Comanda")
 model Order {
-  id        String      @id @default(uuid())
-  
-  tableId   String?
-  table     Table?      @relation(fields: [tableId], references: [id])
-  name   String?
-  status    OrderStatus @default(DRAFT)
-  total     Float       @default(0.0) // RF03 - Subtotal atualizado
+  id            String      @id @default(uuid())
+  tableId       String?
+  table         Table?      @relation(fields: [tableId], references: [id])
+  name          String?
+  status        OrderStatus @default(DRAFT)
+  total         Float       @default(0.0)
   paymentMethod String?
-  
-  items     OrderItem[] // Lista de itens pedidos (Cerveja, Batata, etc)
-  
-  openedAt  DateTime    @default(now()) // Horário de abertura
-  closedAt  DateTime?   // Horário de fechamento (pago)
-
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  items         OrderItem[]
+  openedAt      DateTime    @default(now())
+  closedAt      DateTime?
+  waiter_name   String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
-// RF02, RF05 - Itens dentro do Pedido
 model OrderItem {
-  id        String   @id @default(uuid())
-  
-  orderId   String
-  order     Order    @relation(fields: [orderId], references: [id])
-  
-  productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  
-  quantity  Int
+  id          String   @id @default(uuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id])
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  quantity    Int
   observation String?
-  price     Float    // Preço no momento do pedido (para histórico não mudar se o preço subir depois)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  price       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

@@ -4,23 +4,34 @@ import { FiLogOut } from 'react-icons/fi';
 import { AuthContext } from '../../contexts/AuthContext';
 
 export function Header() {
-    const { signOut } = useContext(AuthContext);
+    const { signOut, user } = useContext(AuthContext);
 
     return (
         <header style={styles.headerContainer}>
             <div style={styles.headerContent}>
 
-                {/* Logo que volta para a Home */}
-                <Link to="/product" style={styles.logo}>
+                {/* Logo que volta para a Home Segura (Balcão) */}
+                <Link to="/balcao" style={styles.logo}>
                     Boa Viagem <span style={{ color: '#3fffa3' }}>Pub</span>
                 </Link>
 
                 {/* Menu de Navegação */}
                 <nav style={styles.menuNav}>
-                    <Link to="/category" style={styles.link}>Categorias</Link>
-                    <Link to="/product" style={styles.link}>Produtos</Link>
-                    <Link to="/edit-product" style={styles.link}>Editar Produto</Link>
-                    <button onClick={signOut} style={styles.logoutBtn}>
+
+                    {/* 🟢 TUDOS PODEM VER (Acesso Livre) */}
+                    <Link to="/balcao" style={styles.link}>Caixa/PDV</Link>
+
+                    {/* 🔴 SÓ O ADMIN (GERENTE) PODE VER ESSES BOTÕES */}
+                    {user?.role === 'ADMIN' && (
+                        <>
+                            <Link to="/category" style={styles.link}>Categorias</Link>
+                            <Link to="/product" style={styles.link}>Produtos</Link>
+                            <Link to="/edit-product" style={styles.link}>Editar Produto</Link>
+                            <Link to="/dashboard" style={styles.link}>Painel</Link>
+                        </>
+                    )}
+
+                    <button onClick={signOut} style={styles.logoutBtn} title="Sair do Sistema">
                         <FiLogOut color="#FFF" size={24} />
                     </button>
                 </nav>
