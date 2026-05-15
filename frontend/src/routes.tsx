@@ -7,6 +7,7 @@ import EditProduct from './pages/EditProduct';
 import Dashboard from './pages/Dashboard';
 import Balcao from './pages/Balcao';
 import Home from './pages/Home';
+import History from './pages/History';
 import { AdminRoute } from './routes/adminRoute';
 
 export default function Router() {
@@ -25,6 +26,7 @@ export default function Router() {
                 <Route path="/product" element={<AdminRoute><Product /></AdminRoute>} />
                 <Route path="/edit-product" element={<AdminRoute><EditProduct /></AdminRoute>} />
                 <Route path="/dashboard" element={<AdminRoute><Dashboard /></AdminRoute>} />
+                <Route path="/historico" element={ <History /> } />
             </Routes>
         </BrowserRouter>
     );

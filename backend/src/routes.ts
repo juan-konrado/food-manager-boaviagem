@@ -25,6 +25,7 @@ import { RemoveOrderController } from './controllers/order/RemoveOrderController
 import { ListOrdersController } from './controllers/order/ListOrdersController';
 import { FinishOrderController } from './controllers/order/FinishOrderController';
 import { GetSalesController } from './controllers/order/GetSalesController';
+import { ListClosedOrdersController } from './controllers/order/ListClosedOrdersController';
 
 const router = Router();
 const upload = multer(uploadConfig.upload("./tmp"));
@@ -74,5 +75,9 @@ router.delete('/order/remove', isAuthenticated, new RemoveItemController().handl
 router.delete('/order', isAuthenticated, new RemoveOrderController().handle);
 router.put('/order/send', isAuthenticated, new SendOrderController().handle);
 router.put('/order/finish', isAuthenticated, new FinishOrderController().handle);
+router.get('/orders/closed', isAuthenticated, new ListClosedOrdersController().handle);
+
+
+
 
 export { router };

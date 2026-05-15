@@ -3,31 +3,29 @@ import { UpdateProductService } from '../../services/product/UpdateProductServic
 
 class UpdateProductController {
     async handle(req: Request, res: Response) {
-        const { product_id, name, price, description } = req.body;
+        
+        // 🟢 1. O SEGREDO ESTÁ AQUI: Temos que tirar o cost_price de dentro do req.body
+        const { product_id, name, price, cost_price, description } = req.body;
 
         const updateProductService = new UpdateProductService();
 
-        // Verifica se veio um arquivo novo de foto
-        if (!req.file) {
-            const product = await updateProductService.execute({
-                product_id,
-                name,
-                price,
-                description
-            });
-            return res.json(product);
-        } else {
-            const { filename: banner } = req.file;
-            const product = await updateProductService.execute({
-                product_id,
-                name,
-                price,
-                description,
-                banner
-            });
-            return res.json(product);
+        // Verifica se o usuário enviou uma imagem nova
+        let banner = undefined;
+        if (req.file) {
+            banner = req.file.filename;
         }
+
+        const product = await updateProductService.execute({
+            product_id,
+            name,
+            price,
+            cost_price, // 🟢 2. E ENTREGAR ELE AQUI PARA O SERVICE!
+            description,
+            banner
+        });
+
+        return res.json(product);
     }
 }
 
-export { UpdateProductController }
+export { UpdateProductController };

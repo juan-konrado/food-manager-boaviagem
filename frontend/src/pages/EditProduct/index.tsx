@@ -3,7 +3,16 @@ import { api } from '../../services/api';
 import { Header } from '../../components/Header';
 
 type CategoryProps = { id: string; name: string; }
-type ProductProps = { id: string; name: string; price: string; description: string; banner: string; }
+
+// 🟢 1. Adicionamos o cost_price na interface do produto
+type ProductProps = {
+    id: string;
+    name: string;
+    price: string;
+    cost_price?: string | number; // Ele pode vir do banco como número agora
+    description: string;
+    banner: string;
+}
 
 export default function EditProduct() {
     const [categories, setCategories] = useState<CategoryProps[]>([]);
@@ -15,6 +24,7 @@ export default function EditProduct() {
     // Campos do formulário
     const [name, setName] = useState('');
     const [price, setPrice] = useState('');
+    const [costPrice, setCostPrice] = useState(''); // 🟢 2. Novo estado para o custo
     const [description, setDescription] = useState('');
 
     // Imagens
@@ -48,6 +58,7 @@ export default function EditProduct() {
             setProductSelected('');
             setName('');
             setPrice('');
+            setCostPrice(''); // 🟢 Limpa o custo também
             setDescription('');
             setAvatarUrl('');
             setImageAvatar(null);
@@ -63,7 +74,11 @@ export default function EditProduct() {
         const product = products.find(p => p.id === selectedId);
         if (product) {
             setName(product.name);
-            setPrice(product.price);
+            setPrice(String(product.price));
+
+            // 🟢 3. Preenche o custo (se não tiver no banco, fica em branco)
+            setCostPrice(product.cost_price ? String(product.cost_price) : '');
+
             setDescription(product.description);
             // Puxa a foto antiga lá da nossa "Vitrine" do Backend
             setAvatarUrl(`http://localhost:3333/files/${product.banner}`);
@@ -97,6 +112,11 @@ export default function EditProduct() {
             data.append('product_id', productSelected);
             data.append('name', name);
             data.append('price', String(price).replace(',', '.'));
+
+            // 🟢 4. Adicionamos o custo no pacote do FormData
+            // Trocamos a vírgula por ponto caso o usuário digite 5,50
+            data.append('cost_price', String(costPrice).replace(',', '.'));
+
             data.append('description', description);
 
             // Só envia a foto se ele selecionou uma nova
@@ -172,8 +192,14 @@ export default function EditProduct() {
                                     {avatarUrl && <img src={avatarUrl} alt="Foto do produto" style={styles.preview} />}
                                 </label>
 
-                                <input type="text" placeholder="Nome" style={styles.input} value={name} onChange={(e) => setName(e.target.value)} />
-                                <input type="text" placeholder="Preço" style={styles.input} value={price} onChange={(e) => setPrice(e.target.value)} />
+                                <input type="text" placeholder="Nome do Produto" style={styles.input} value={name} onChange={(e) => setName(e.target.value)} />
+
+                                {/* Os dois preços um embaixo do outro */}
+                                <input type="text" placeholder="Preço de Venda (Ex: 17.50)" style={styles.input} value={price} onChange={(e) => setPrice(e.target.value)} />
+
+                                {/* 🟢 5. O NOVO INPUT DO CUSTO */}
+                                <input type="text" placeholder="Preço de Custo (Ex: 5.00)" style={styles.input} value={costPrice} onChange={(e) => setCostPrice(e.target.value)} />
+
                                 <textarea placeholder="Descrição" style={styles.textarea} value={description} onChange={(e) => setDescription(e.target.value)} />
 
                                 <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>

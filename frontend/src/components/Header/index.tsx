@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FiLogOut } from 'react-icons/fi';
 import { AuthContext } from '../../contexts/AuthContext';
 
+
 export function Header() {
     const { signOut, user } = useContext(AuthContext);
 
@@ -28,6 +29,7 @@ export function Header() {
                             <Link to="/product" style={styles.link}>Produtos</Link>
                             <Link to="/edit-product" style={styles.link}>Editar Produto</Link>
                             <Link to="/dashboard" style={styles.link}>Painel</Link>
+                            <Link to="/historico" style={styles.link}>Histórico de Comandas</Link>
                         </>
                     )}
 

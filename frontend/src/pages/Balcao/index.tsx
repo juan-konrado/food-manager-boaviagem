@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Header } from '../../components/Header';
-import { FiUsers, FiUser } from 'react-icons/fi';
-import Modal from 'react-modal'; // <-- IMPORTA O MODAL
+import { FiUsers, FiUser, FiSearch } from 'react-icons/fi'; // 🟢 Adicionamos o ícone de lupa
+import Modal from 'react-modal'; 
 import { ModalOrder } from '../../components/ModalOrder';
-import { ModalNewOrder } from '../../components/ModalNewOrder'; // 🟢 NOSSA JANELA NOVA AQUI!
+import { ModalNewOrder } from '../../components/ModalNewOrder'; 
 import { api } from '../../services/api';
 import { io } from 'socket.io-client';
 
 Modal.setAppElement('#root');
-// Tipagem do que é um pedido no nosso sistema
+
 export type OrderProps = {
     id: string;
     tableId: string | null;
@@ -21,11 +21,9 @@ export type OrderProps = {
     };
 }
 
-
-
 export type OrderItemProps = {
     id: string;
-    quantity: number; // Ou quantity, dependendo do seu banco
+    quantity: number; 
     orderId: string;
     productId: string;
     product: {
@@ -41,12 +39,12 @@ export type OrderItemProps = {
     }
 }
 
-
 export default function Balcao() {
-
     const [activeOrders, setActiveOrders] = useState<OrderProps[]>([]);
+    
+    // 🟢 NOVO ESTADO: O que o usuário digitou na barra de busca
+    const [search, setSearch] = useState('');
 
-    // 🟢 NOVOS ESTADOS PARA A JANELA
     const [modalVisible, setModalVisible] = useState(false);
     const [modalTable, setModalTable] = useState<string | null>(null);
     const [modalItems, setModalItems] = useState<OrderItemProps[]>([]);
@@ -59,40 +57,31 @@ export default function Balcao() {
 
     useEffect(() => {
         async function loadOrders() {
-
             try {
                 const response = await api.get('/orders');
                 setActiveOrders(response.data);
-
             } catch (err) {
                 console.log("Erro ao carregar as mesas", err);
             }
         }
-
         loadOrders();
     }, []);
 
     function handleOpenDetails(tableId: string | null, orders: OrderProps[]) {
         if (orders.length === 0) {
-            // 🟢 MESA LIVRE! Chama a janela verde de nova comanda
             setNewTableNumber(tableId);
             setModalNewVisible(true);
             return;
         }
-
-        // MESA OCUPADA! Abre o Raio-X normal
         setModalTable(tableId);
         setModalOrders(orders);
         setModalVisible(true);
     }
 
-
-
     function handleCloseModal() {
         setModalVisible(false);
     }
 
-    // Essa função vai lá na API e atualiza o nosso mapa!
     async function refreshOrders() {
         try {
             const response = await api.get('/orders');
@@ -102,45 +91,54 @@ export default function Balcao() {
         }
     }
 
-    // (O seu useEffect antigo que chama refreshOrders ao abrir a tela fica aqui)
     useEffect(() => {
         refreshOrders();
     }, []);
 
-    // ==========================================
-    // 🟢 NOSSO RADINHO ESCUTANDO O BACKEND AO VIVO
-    // ==========================================
     useEffect(() => {
-        // Conecta no megafone do backend
         const socket = io('http://localhost:3333');
-
-        // Fica escutando o grito chamado 'orders_updated'
         socket.on('orders_updated', () => {
             console.log("Ouvimos o grito! Atualizando as mesas...");
-            refreshOrders(); // Dá o "F5" invisível e silencioso!
+            refreshOrders(); 
         });
-
-        // Se o caixa fechar a tela, desliga o rádio para não gastar memória
         return () => {
             socket.disconnect();
         };
     }, []);
 
-    // Filtra as comandas avulsas (Balcão) com a regra de exclusão perfeita
+    // ==========================================
+    // 🟢 LÓGICA DE FILTRAGEM (A MÁGICA DA BUSCA)
+    // ==========================================
+
+    const searchLower = search.toLowerCase();
+
+    // 1. Filtramos as Mesas (Aparece se o número bater OU se o nome do cliente na mesa bater)
+    const mesasFiltradas = mesas.filter(numeroMesa => {
+        if (!search) return true; // Se não tem busca, mostra tudo
+        
+        // Verifica se o número da mesa bate com a pesquisa
+        if (numeroMesa.includes(searchLower)) return true;
+
+        // Verifica se algum cliente sentado NESTA mesa bate com a pesquisa
+        const clientesNaMesa = activeOrders.filter(order => {
+            if (!order.table) return false;
+            return String(order.table.number) === numeroMesa || String(order.table.name) === numeroMesa;
+        });
+
+        // Se achar o nome do cliente, a mesa continua visível!
+        return clientesNaMesa.some(cliente => cliente.name?.toLowerCase().includes(searchLower));
+    });
+
+    // 2. Separa e Filtra as Comandas Avulsas
     const comandasAvulsas = activeOrders.filter(order => {
-        // 1. Se realmente vier vazio, é avulsa
         if (!order.tableId || !order.table) return true;
-
-        // Pega o que o banco mandou (pode ser "Balcão", "99", "Avulsa", etc)
         const identificadorMesa = String(order.table.number || order.table.name);
-
-        // 2. A MÁGICA: Se esse identificador NÃO estiver na nossa lista de 1 a 25, é avulsa!
-        if (!mesas.includes(identificadorMesa)) {
-            return true;
-        }
-
-        // Se passou por tudo e está entre 1 e 25, então NÃO é avulsa (vai acender o quadradinho)
+        if (!mesas.includes(identificadorMesa)) return true;
         return false;
+    }).filter(order => {
+        // Aplica a barra de busca nas avulsas também!
+        if (!search) return true;
+        return order.name?.toLowerCase().includes(searchLower);
     });
 
     return (
@@ -154,18 +152,32 @@ export default function Balcao() {
                         <span style={styles.statusBolinha}>🟢 Caixa Aberto</span>
                     </div>
 
+                    {/* 🟢 NOSSA NOVA BARRA DE PESQUISA */}
+                    <div style={styles.searchContainer}>
+                        <FiSearch size={24} color="#8a8a8a" style={styles.searchIcon} />
+                        <input 
+                            type="text" 
+                            placeholder="Buscar comanda por nome do cliente ou número da mesa..." 
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            style={styles.searchInput}
+                        />
+                    </div>
+
                     <div style={styles.gridLayout}>
-                        {/* LADO ESQUERDO: Mapa das 25 Mesas */}
+                        {/* LADO ESQUERDO: Mapa das Mesas */}
                         <div style={styles.mesasSection}>
                             <h2 style={styles.subtitle}>Mapa de Mesas</h2>
 
                             <div style={styles.mesasGrid}>
-                                {mesas.map(numeroMesa => {
-                                    // Agora procuramos dentro do objeto 'table' que o backend enviou!
+                                {/* 🟢 Agora mapeamos as mesasFiltradas no lugar de mesas */}
+                                {mesasFiltradas.length === 0 && (
+                                    <p style={{ color: '#8a8a8a', gridColumn: '1 / -1' }}>Nenhuma mesa encontrada com esse nome/número.</p>
+                                )}
+
+                                {mesasFiltradas.map(numeroMesa => {
                                     const clientesNaMesa = activeOrders.filter(order => {
                                         if (!order.table) return false;
-
-                                        // Compara tanto se a sua coluna for "number" ou "name" no banco
                                         return String(order.table.number) === numeroMesa || String(order.table.name) === numeroMesa;
                                     });
 
@@ -176,7 +188,7 @@ export default function Balcao() {
                                             key={numeroMesa}
                                             style={{
                                                 ...styles.mesaButton,
-                                                backgroundColor: isOcupada ? '#ff3f4b' : '#101026', // Vermelho se ocupada, escura se livre
+                                                backgroundColor: isOcupada ? '#ff3f4b' : '#101026', 
                                                 borderColor: isOcupada ? '#ff3f4b' : '#3fffa3'
                                             }}
                                             onClick={() => handleOpenDetails(numeroMesa, clientesNaMesa)}
@@ -203,7 +215,9 @@ export default function Balcao() {
 
                             <div style={styles.avulsasList}>
                                 {comandasAvulsas.length === 0 && (
-                                    <p style={{ color: '#8a8a8a', textAlign: 'center', marginTop: '20px' }}>Nenhuma comanda avulsa no momento.</p>
+                                    <p style={{ color: '#8a8a8a', textAlign: 'center', marginTop: '20px' }}>
+                                        {search ? "Nenhuma comanda encontrada na busca." : "Nenhuma comanda avulsa no momento."}
+                                    </p>
                                 )}
 
                                 {comandasAvulsas.map(order => (
@@ -223,7 +237,7 @@ export default function Balcao() {
                         </div>
 
                     </div>
-                    {/* 🟢 NOSSA JANELA MODAL INVISÍVEL ESPERANDO O CLIQUE */}
+
                     {modalVisible && (
                         <ModalOrder
                             isOpen={modalVisible}
@@ -233,13 +247,12 @@ export default function Balcao() {
                         />
                     )}
 
-                    {/* 🟢 JANELA NOVA: ABRIR MESA LIVRE */}
                     {modalNewVisible && (
                         <ModalNewOrder
                             isOpen={modalNewVisible}
                             onRequestClose={() => setModalNewVisible(false)}
                             tableNumber={newTableNumber}
-                            onSuccess={refreshOrders} // Atualiza a tela quando abrir!
+                            onSuccess={refreshOrders} 
                         />
                     )}
 
@@ -249,13 +262,17 @@ export default function Balcao() {
     );
 }
 
-// O Visual da nossa central de comando
 const styles = {
     container: { minHeight: '100vh', backgroundColor: '#1d1d2e', padding: '30px 20px' },
     main: { width: '100%', maxWidth: '1400px', margin: '0 auto' },
-    headerCaixa: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', borderBottom: '1px solid #8a8a8a', paddingBottom: '15px' },
+    headerCaixa: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid #8a8a8a', paddingBottom: '15px' },
     title: { color: '#FFF', fontSize: '32px' },
     statusBolinha: { backgroundColor: '#103a20', color: '#3fffa3', padding: '8px 16px', borderRadius: '20px', fontWeight: 'bold' },
+
+    // 🟢 Estilos da nova barra de pesquisa
+    searchContainer: { position: 'relative' as const, marginBottom: '30px' },
+    searchIcon: { position: 'absolute' as const, left: '15px', top: '50%', transform: 'translateY(-50%)' },
+    searchInput: { width: '100%', padding: '16px 16px 16px 50px', fontSize: '16px', backgroundColor: '#101026', border: '1px solid #8a8a8a', borderRadius: '8px', color: '#FFF', outline: 'none' },
 
     gridLayout: { display: 'flex', gap: '30px', flexWrap: 'wrap' as const },
 
