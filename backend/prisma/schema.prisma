@@ -32,6 +32,7 @@ model User {
   role      String   @default("GARCOM")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  orders    Order[] 
 }
 
 model Category {
@@ -77,7 +78,11 @@ model Order {
   items         OrderItem[]
   openedAt      DateTime    @default(now())
   closedAt      DateTime?
+  
   waiter_name   String?
+  waiterId      String?
+  waiter        User?       @relation(fields: [waiterId], references: [id])
+
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 }

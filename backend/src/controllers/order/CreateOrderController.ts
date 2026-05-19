@@ -6,11 +6,15 @@ class CreateOrderController {
   async handle(req: Request, res: Response) {
     const { table, name } = req.body;
 
+    // 🟢 A MÁGICA AQUI: Pega o ID secreto extraído do Token de Login!
+    const user_id = req.user_id;
+
     const createOrderService = new CreateOrderService();
 
     const order = await createOrderService.execute({
       table,
-      name
+      name,
+      waiterId: user_id // 🟢 Envia o ID para o Service carimbar a comanda
     });
 
     io.emit('orders_updated');

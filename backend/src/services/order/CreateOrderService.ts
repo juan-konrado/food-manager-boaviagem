@@ -2,23 +2,37 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-
 interface OrderRequest {
   table: number;
   name?: string;
+  waiterId: string; 
 }
 
 class CreateOrderService {
-  async execute({ table, name }: OrderRequest) {
-    // Agora nós usamos o superpoder de relacionamentos do Prisma!
+  async execute({ table, name, waiterId }: OrderRequest) {
+    
+    // 1. Busca o nome do usuário que está logado no sistema
+    const user = await prisma.user.findUnique({
+        where: { id: waiterId }
+    });
+
     const order = await prisma.order.create({
       data: {
         name: name,
-        // Conecta o pedido à Mesa real no banco de dados
+        waiter_name: user?.name,
+        
+        // 🟢 A CORREÇÃO ESTÁ AQUI: Usando o formato de Relação (connect) igual a mesa!
+        waiter: {
+          connect: {
+            id: waiterId
+          }
+        },
+        
+        // Conecta o pedido à Mesa
         table: {
           connectOrCreate: {
-            where: { number: table }, // Procura a mesa com esse número
-            create: { number: table } // Se não achar, cria a mesa com esse número na hora!
+            where: { number: table }, 
+            create: { number: table } 
           }
         }
       }
